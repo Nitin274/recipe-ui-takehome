@@ -1,0 +1,7 @@
+{
+  "name": "recipe-ui",
+  "type": "module",
+  "scripts": {
+    "server": "node server/server.js"
+  }
+}

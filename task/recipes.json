@@ -1,0 +1,39 @@
+{
+  "flour": {
+    "name": "Flour"
+  },
+  "water": {
+    "name": "Water"
+  },
+  "egg": {
+    "name": "Egg",
+    "states": ["raw", "boiled", "fried"]
+  },
+  "bread": {
+    "name": "Bread",
+    "components": [
+      {
+        "id": "flour",
+        "qty": 500
+      },
+      {
+        "id": "water",
+        "qty": 300
+      }
+    ]
+  },
+  "egg-sandwich": {
+    "name": "Egg Sandwich",
+    "components": [
+      {
+        "id": "bread",
+        "qty": 2
+      },
+      {
+        "id": "egg",
+        "qty": 1,
+        "state": "fried"
+      }
+    ]
+  }
+}
