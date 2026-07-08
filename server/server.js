@@ -3,6 +3,7 @@ import { readFile, writeFile } from "fs/promises";
 
 const storeFile = new URL("./store.json", import.meta.url);
 const store = await loadStore();
+const port = Number(process.env.PORT || 4000);
 const delay = () =>
   new Promise((r) => setTimeout(r, 100 + Math.floor(Math.random() * 1000)));
 const persist = () =>
@@ -14,6 +15,7 @@ const persist = () =>
 
 async function loadStore() {
   try {
+    // Keep the server deliberately simple: persisted JSON behaves like localStorage.
     const data = JSON.parse(await readFile(storeFile, "utf8"));
     return new Map(
       typeof data === "object" && data ? Object.entries(data) : [],
@@ -24,7 +26,8 @@ async function loadStore() {
   }
 }
 
-createServer(async (req, res) => {
+const server = createServer(async (req, res) => {
+  // Allow the Vite client to call this local storage server from port 5173.
   res.setHeader("Access-Control-Allow-Origin", "*");
   res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
   res.setHeader("Access-Control-Allow-Headers", "Content-Type");
@@ -35,9 +38,11 @@ createServer(async (req, res) => {
   if (!key) return (await delay(), res.writeHead(400).end("key required"));
 
   if (req.method === "GET") {
+    // Read a JSON string by key.
     await delay();
     store.has(key) ? res.end(store.get(key)) : res.writeHead(404).end();
   } else if (req.method === "POST") {
+    // Store the raw JSON string the client sends.
     let body = "";
     req.on("data", (c) => (body += c));
     req.on("end", async () => {
@@ -47,6 +52,7 @@ createServer(async (req, res) => {
       res.writeHead(201).end();
     });
   } else if (req.method === "DELETE") {
+    // Delete a saved value by key.
     const existed = store.delete(key);
     if (existed) await persist();
     await delay();
@@ -55,4 +61,16 @@ createServer(async (req, res) => {
     await delay();
     res.writeHead(405).end();
   }
-}).listen(4000, () => console.log("listening on http://localhost:4000"));
+});
+
+server.on("error", (error) => {
+  if (error.code === "EADDRINUSE") {
+    console.error(`Port ${port} is already in use. The storage server may already be running.`);
+    console.error(`Use the existing server, or start another one with: PORT=${port + 1} npm run server`);
+    process.exit(1);
+  }
+
+  throw error;
+});
+
+server.listen(port, () => console.log(`listening on http://localhost:${port}`));
